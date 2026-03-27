@@ -1,0 +1,303 @@
+{
+  "app_name": "News Genesis",
+  "version": "1.0.0",
+  "build_date": "2026-03-27",
+  "status": "production_ready",
+  "description": "Advanced news app with live streaming, AI dubbing, advanced audio processing, and 24/7 web scraping",
+  
+  "features": {
+    "live_streaming": {
+      "channels": ["Al Jazeera English", "Al Jazeera Arabic"],
+      "format": "HLS/m3u8",
+      "qualities": ["720p", "480p", "360p", "Auto"],
+      "status": "active"
+    },
+    "ai_dubbing": {
+      "provider": "Google Gemini API",
+      "languages": ["Malayalam", "Hindi", "Urdu"],
+      "tts_provider": "Google Cloud TTS",
+      "status": "active"
+    },
+    "advanced_audio": {
+      "features": ["Speaker Diarization", "Multi-voice synthesis", "Audio Sync (5-10s)"],
+      "status": "active"
+    },
+    "backend": {
+      "provider": "Firebase",
+      "services": ["Realtime Database", "Storage", "Authentication"],
+      "status": "active"
+    },
+    "monetization": {
+      "provider": "Google AdMob",
+      "ad_types": ["Banner", "Interstitial", "Rewarded"],
+      "target_region": "Middle East",
+      "status": "active"
+    },
+    "automation": {
+      "provider": "VPS Cloud Server",
+      "service": "24/7 Web Scraper",
+      "frequency": "Every 6 hours",
+      "status": "active"
+    }
+  },
+
+  "tech_stack": {
+    "mobile": {
+      "framework": "Flutter",
+      "language": "Dart",
+      "min_sdk": 21,
+      "platforms": ["iOS", "Android", "Web"]
+    },
+    "backend": {
+      "Framework": "FastAPI",
+      "language": "Python",
+      "database": "Firebase Realtime",
+      "scraper": "BeautifulSoup4"
+    },
+    "apis": {
+      "gemini": "Google Generative AI",
+      "speech": "Google Cloud TTS",
+      "ads": "Google AdMob",
+      "firebase": "Google Firebase"
+    }
+  },
+
+  "services": {
+    "hls_stream_service": {
+      "file": "lib/services/hls_stream_service.dart",
+      "functions": [
+        "getPlaylistSegments()",
+        "getAvailableQualities()",
+        "selectOptimalQuality()",
+        "getPlayableStreamUrl()"
+      ]
+    },
+    "ai_dubbing_service": {
+      "file": "lib/services/ai_dubbing_service.dart",
+      "functions": [
+        "translateNewsContent()",
+        "streamTranslation()",
+        "initTTS()",
+        "playDubbing()",
+        "getSpeakerProfile()"
+      ]
+    },
+    "advanced_audio_service": {
+      "file": "lib/services/advanced_audio_service.dart",
+      "functions": [
+        "detectSpeakers()",
+        "extractSpeakerSegment()",
+        "applySpeechSynthesis()",
+        "startRecording()",
+        "stopRecording()",
+        "applySyncOffset()",
+        "playAudioWithDiarization()"
+      ]
+    },
+    "firebase_news_service": {
+      "file": "lib/services/firebase_news_service.dart",
+      "functions": [
+        "fetchLatestNews()",
+        "fetchNewsById()",
+        "saveNewsArticle()",
+        "uploadDubbedAudio()",
+        "saveDubbedAudio()",
+        "incrementViewCount()",
+        "watchLatestNews()",
+        "searchNews()"
+      ]
+    },
+    "admob_service": {
+      "file": "lib/services/admob_service.dart",
+      "functions": [
+        "loadBannerAd()",
+        "loadInterstitialAd()",
+        "loadRewardedAd()",
+        "showInterstitialAd()",
+        "showRewardedAd()",
+        "getBannerAdWidget()",
+        "loadContextualAds()"
+      ]
+    }
+  },
+
+  "firebase_configuration": {
+    "services": {
+      "realtime_database": {
+        "name": "Realtime Database",
+        "purpose": "Store news articles and metadata",
+        "regions": ["us-central1", "europe-west1"],
+        "backup_enabled": true
+      },
+      "cloud_storage": {
+        "name": "Cloud Storage",
+        "purpose": "Store audio files and images",
+        "backup_enabled": true
+      },
+      "authentication": {
+        "name": "Authentication",
+        "purpose": "User authentication (future)",
+        "methods": ["Anonymous", "Google"]
+      }
+    },
+    "database_structure": {
+      "news": {
+        "english": "News articles from English channel",
+        "arabic": "News articles from Arabic channel"
+      },
+      "dubbed_audio": {
+        "article_id": "Dubbed audio files for articles"
+      }
+    }
+  },
+
+  "vps_deployment": {
+    "requirements": {
+      "os": "Ubuntu 22.04 LTS",
+      "cpu": "2 cores minimum",
+      "ram": "2GB minimum",
+      "storage": "20GB SSD",
+      "network": "Stable internet connection"
+    },
+    "providers": [
+      "AWS EC2",
+      "DigitalOcean",
+      "Linode",
+      "Vultr",
+      "Hetzner"
+    ],
+    "setup_steps": [
+      "SSH connection",
+      "Install Python 3.11",
+      "Clone repository",
+      "Setup virtual environment",
+      "Install dependencies",
+      "Configure .env",
+      "Setup systemd service",
+      "Enable firewall",
+      "Verify service"
+    ],
+    "ports": {
+      "22": "SSH",
+      "8000": "FastAPI Scraper",
+      "443": "HTTPS (optional)"
+    }
+  },
+
+  "api_endpoints": {
+    "health": "GET /health",
+    "scrape": "POST /scrape?channel=english|arabic",
+    "articles": "GET /articles?channel=english|arabic&limit=20",
+    "stats": "GET /stats"
+  },
+
+  "credentials_required": {
+    "firebase": {
+      "type": "google-services.json + firebase-credentials.json",
+      "location": "Firebase Console > Project Settings",
+      "used_for": ["Database access", "Authentication", "Storage"]
+    },
+    "gemini_api": {
+      "type": "API Key",
+      "location": "Google AI Studio",
+      "used_for": ["AI translation", "Dubbing"]
+    },
+    "admob": {
+      "type": "App ID + Ad Unit IDs",
+      "location": "AdMob Console",
+      "used_for": ["Banner ads", "Interstitial ads", "Rewarded ads"]
+    },
+    "github": {
+      "type": "OAuth2 Token (optional)",
+      "location": "GitHub Settings",
+      "used_for": ["Repository deployment"]
+    }
+  },
+
+  "deployment_checklist": {
+    "pre_deployment": [
+      "Verify all API keys are configured",
+      "Test Firebase connection",
+      "Test Gemini API key",
+      "Test AdMob setup",
+      "Build APK/IPA",
+      "Test on physical device"
+    ],
+    "deployment": [
+      "Deploy VPS backend",
+      "Configure systemd service",
+      "Setup firewall",
+      "Enable HTTPS (optional)",
+      "Configure backups",
+      "Setup monitoring"
+    ],
+    "post_deployment": [
+      "Test all APIs",
+      "Monitor logs",
+      "Verify scraping",
+      "Test in-app ads",
+      "Monitor performance"
+    ]
+  },
+
+  "monitoring": {
+    "vps_logs": "sudo journalctl -u news-genesis-scraper -f",
+    "firebase_monitoring": "Firebase Console > Performance",
+    "admob_monitoring": "AdMob Console > Analytics",
+    "error_tracking": "Firebase Crashlytics"
+  },
+
+  "scaling": {
+    "database": [
+      "Add indexing on frequently queried fields",
+      "Implement caching (Redis)",
+      "Archive old articles",
+      "Partition data by date"
+    ],
+    "api": [
+      "Load balancing (Nginx)",
+      "Multiple worker processes",
+      "Connection pooling",
+      "Rate limiting"
+    ],
+    "app": [
+      "Code splitting",
+      "Lazy loading",
+      "Image compression",
+      "ProGuard obfuscation"
+    ]
+  },
+
+  "files_created": {
+    "flutter_services": [
+      "lib/services/hls_stream_service.dart",
+      "lib/services/ai_dubbing_service.dart",
+      "lib/services/advanced_audio_service.dart",
+      "lib/services/firebase_news_service.dart",
+      "lib/services/admob_service.dart"
+    ],
+    "flutter_screens": [
+      "lib/screens/home_page.dart",
+      "lib/screens/live_stream_screen.dart",
+      "lib/screens/dubbing_control_panel.dart"
+    ],
+    "vps_backend": [
+      "vps_scraper/main.py",
+      "vps_scraper/requirements.txt",
+      "vps_scraper/.env.example",
+      "vps_scraper/API_DOCUMENTATION.md"
+    ],
+    "documentation": [
+      "README.md",
+      "SETUP_CHECKLIST.md"
+    ]
+  },
+
+  "support_resources": {
+    "flutter": "https://flutter.dev/docs",
+    "firebase": "https://firebase.google.com/docs",
+    "gemini_api": "https://ai.google.dev/",
+    "admob": "https://support.google.com/admob",
+    "python_fastapi": "https://fastapi.tiangolo.com/"
+  }
+}

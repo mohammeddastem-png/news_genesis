@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "335256069796",
+    "project_id": "newsgenesis-59790",
+    "storage_bucket": "newsgenesis-59790.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:335256069796:android:97a38eaeca14333de4e831",
+        "android_client_info": {
+          "package_name": "com.example.news_genesis"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyC0D3iDlk_47dB_qTx1cw77ntAKDoEn-s8"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
