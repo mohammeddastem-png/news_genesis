@@ -66,5 +66,17 @@
 		<string>UIInterfaceOrientationLandscapeLeft</string>
 		<string>UIInterfaceOrientationLandscapeRight</string>
 	</array>
+	<!-- Required permissions for News Genesis -->
+	<key>NSMicrophoneUsageDescription</key>
+	<string>Microphone access is needed for audio dubbing and speaker detection.</string>
+	<key>NSCameraUsageDescription</key>
+	<string>Camera access may be needed for future video features.</string>
+	<key>NSLocalNetworkUsageDescription</key>
+	<string>Local network access for streaming content.</string>
+	<key>NSBonjourServiceTypes</key>
+	<array>
+		<string>_http._tcp</string>
+		<string>_https._tcp</string>
+	</array>
 </dict>
 </plist>

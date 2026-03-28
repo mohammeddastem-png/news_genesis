@@ -1,10 +1,17 @@
 /// Service to manage HLS/.m3u8 streaming for Al Jazeera channels
 class HLSStreamService {
+  // Using web-compatible HLS streams that work on all platforms including web
+  // These are public broadcast streams accessible from anywhere
   static const String alJazeeraEnglishUrl =
       'https://live-qatarstream.com/hls/alijazeera_enghd/index.m3u8';
   
   static const String alJazeeraArabicUrl =
       'https://live-qatarstream.com/hls/alijazeera_arabhd/index.m3u8';
+  
+  // Fallback YouTube stream for better web compatibility
+  // Format: YouTube live stream embed URL
+  static const String youTubeEnglishEmbedUrl =
+      'https://www.youtube.com/embed/live/UCP3lAJvE2xEIwFl16c3vIFQ?autoplay=1';
 
   /// Validate HLS playlist URL
   Future<bool> validatePlaylist(String playlistUrl) async {

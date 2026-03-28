@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../config/app_config.dart';
 import '../services/ai_dubbing_service.dart';
 import '../services/advanced_audio_service.dart';
 
@@ -10,7 +11,7 @@ class DubbingControlPanel extends StatefulWidget {
 }
 
 class _DubbingControlPanelState extends State<DubbingControlPanel> {
-  late AIDubbingService _dubbingService;
+  AIDubbingService? _dubbingService;
   late AdvancedAudioService _audioService;
 
   TargetLanguage _selectedLanguage = TargetLanguage.malayalam;
@@ -24,7 +25,9 @@ class _DubbingControlPanelState extends State<DubbingControlPanel> {
   @override
   void initState() {
     super.initState();
-    _dubbingService = AIDubbingService(apiKey: 'YOUR_GEMINI_API_KEY_HERE');
+    if (AppConfig.hasGeminiApiKey) {
+      _dubbingService = AIDubbingService(apiKey: AppConfig.geminiApiKey);
+    }
     _audioService = AdvancedAudioService();
     _initializeAudio();
   }
@@ -32,20 +35,32 @@ class _DubbingControlPanelState extends State<DubbingControlPanel> {
   Future<void> _initializeAudio() async {
     try {
       await _audioService.initAudioSession();
-      print('Audio session initialized');
+      debugPrint('Audio session initialized');
     } catch (e) {
-      print('Warning: Could not initialize audio session: $e');
+      debugPrint('Warning: Could not initialize audio session: $e');
     }
   }
 
   Future<void> _translateAndDub(String sourceText) async {
+    if (!AppConfig.hasGeminiApiKey || _dubbingService == null) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'Add your API key: flutter run --dart-define=GEMINI_API_KEY=your_key',
+          ),
+        ),
+      );
+      return;
+    }
+
     setState(() {
       _isTranslating = true;
       _translatedText = '';
     });
 
     try {
-      final translated = await _dubbingService.translateNewsContent(
+      final translated = await _dubbingService!.translateNewsContent(
         sourceText,
         'en', // Source language (Al Jazeera English)
         _selectedLanguage,
@@ -59,6 +74,7 @@ class _DubbingControlPanelState extends State<DubbingControlPanel> {
       // ഓഡിയോ ഡബിംഗ് പ്ലേ ചെയ്യുക
       await _playDubbing(translated);
     } catch (e) {
+      if (!mounted) return;
       setState(() {
         _isTranslating = false;
       });
@@ -74,7 +90,7 @@ class _DubbingControlPanelState extends State<DubbingControlPanel> {
         _isPlaying = true;
       });
 
-      await _dubbingService.playDubbing(
+      await _dubbingService!.playDubbing(
         translatedText,
         _selectedLanguage,
         _audioSyncOffset,
@@ -84,7 +100,7 @@ class _DubbingControlPanelState extends State<DubbingControlPanel> {
         _isPlaying = false;
       });
     } catch (e) {
-      print('Error playing dubbing: $e');
+      debugPrint('Error playing dubbing: $e');
       setState(() {
         _isPlaying = false;
       });
@@ -117,6 +133,35 @@ class _DubbingControlPanelState extends State<DubbingControlPanel> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            if (!AppConfig.hasGeminiApiKey)
+              Padding(
+                padding: const EdgeInsets.only(bottom: 16),
+                child: Material(
+                  color: Colors.orange.shade100,
+                  borderRadius: BorderRadius.circular(8),
+                  child: Padding(
+                    padding: const EdgeInsets.all(12),
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Icon(Icons.key_off, color: Colors.orange.shade900),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Text(
+                            'Gemini is disabled until you pass GEMINI_API_KEY at '
+                            'build time. Example: '
+                            'flutter run --dart-define=GEMINI_API_KEY=your_key',
+                            style: TextStyle(
+                              color: Colors.orange.shade900,
+                              fontSize: 13,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
             // ഭാഷ സെലെക്ഷൻ
             Text(
               'Dubbing Language',
@@ -145,12 +190,12 @@ class _DubbingControlPanelState extends State<DubbingControlPanel> {
                     ),
                   ),
                   DropdownMenuItem(
-                    value: TargetLanguage.hindi,
+                    value: TargetLanguage.tamil,
                     child: Row(
                       children: const [
                         Icon(Icons.language),
                         SizedBox(width: 8),
-                        Text('Hindi (हिन्दी)'),
+                        Text('Tamil (தமிழ்)'),
                       ],
                     ),
                   ),
@@ -161,6 +206,16 @@ class _DubbingControlPanelState extends State<DubbingControlPanel> {
                         Icon(Icons.language),
                         SizedBox(width: 8),
                         Text('Urdu (اردو)'),
+                      ],
+                    ),
+                  ),
+                  DropdownMenuItem(
+                    value: TargetLanguage.hindi,
+                    child: Row(
+                      children: const [
+                        Icon(Icons.language),
+                        SizedBox(width: 8),
+                        Text('Hindi (हिन्दी)'),
                       ],
                     ),
                   ),
@@ -293,7 +348,7 @@ class _DubbingControlPanelState extends State<DubbingControlPanel> {
                   _isTranslating ? 'Translating...' : 'Translate & Dub',
                   style: const TextStyle(fontSize: 16),
                 ),
-                onPressed: _isTranslating
+                onPressed: (_isTranslating || !AppConfig.hasGeminiApiKey)
                     ? null
                     : () {
                         // സാമ്പൾ ന്യൂസ് ടെക്സ്റ്റ് (Firebase യിൽ നിന്ന് ലോഡ് ചെയ്യാൻ പ്രയോഗിക്കേണ്ടതുണ്ട്)
@@ -408,7 +463,7 @@ class _DubbingControlPanelState extends State<DubbingControlPanel> {
 
   @override
   void dispose() {
-    _dubbingService.dispose();
+    _dubbingService?.dispose();
     _audioService.dispose();
     super.dispose();
   }

@@ -1,0 +1,30 @@
+# റിയൽടൈം ഡാറ്റാബേസിലെ pending ലൈവ് ഡബ്ബിംഗ് ജോബുകൾ പ്രോസസ്സ് ചെയ്യുന്നു.
+# Secrets: FIREBASE_SERVICE_ACCOUNT_KEY, GEMINI_API_KEY
+# ഓപ്ഷണൽ: FIREBASE_STORAGE_BUCKET (ഡിഫോൾട്ട് newsgenesis-59790.firebasestorage.app)
+
+name: Live dubbing worker
+
+on:
+  schedule:
+    - cron: '*/2 * * * *' # ഏതു 2 മിനിറ്റിലും
+  workflow_dispatch:
+
+jobs:
+  dubbing:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install system deps
+        run: sudo apt-get update && sudo apt-get install -y ffmpeg
+      - name: Install Python packages
+        run: |
+          pip install firebase-admin google-generativeai gtts pydub
+      - name: Run dubbing worker
+        env:
+          FIREBASE_SERVICE_ACCOUNT_KEY: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_KEY }}
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          FIREBASE_STORAGE_BUCKET: ${{ secrets.FIREBASE_STORAGE_BUCKET }}
+        run: python dubbing_worker.py

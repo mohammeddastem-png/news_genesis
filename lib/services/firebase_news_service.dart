@@ -1,4 +1,8 @@
+import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_database/firebase_database.dart';
+import 'package:flutter/foundation.dart';
+
+import '../firebase_options.dart';
 
 class NewsArticle {
   final String id;
@@ -83,13 +87,33 @@ class DubbedAudio {
 
 /// Firebase Realtime Database Service for news content
 class FirebaseNewsService {
-  final FirebaseDatabase _database = FirebaseDatabase.instance;
-
-  List<NewsArticle> _newsArticles = [];
-  List<DubbedAudio> _dubbedAudios = [];
+  FirebaseDatabase? _database;
+  final List<NewsArticle> _newsArticles = [];
+  final List<DubbedAudio> _dubbedAudios = [];
 
   List<NewsArticle> get newsArticles => _newsArticles;
   List<DubbedAudio> get dubbedAudios => _dubbedAudios;
+
+  bool get hasDatabase => _database != null;
+
+  FirebaseNewsService() {
+    _initializeDatabase();
+  }
+
+  void _initializeDatabase() {
+    try {
+      if (Firebase.apps.isEmpty) {
+        debugPrint('Firebase ഇനിഷ്യലൈസ് ചെയ്തിട്ടില്ല — ഡാറ്റാബേസ് പ്രവർത്തിക്കില്ല');
+        return;
+      }
+      _database = FirebaseDatabase.instanceFor(
+        app: Firebase.app(),
+        databaseURL: DefaultFirebaseOptions.databaseUrl,
+      );
+    } catch (e) {
+      debugPrint('Firebase Database ലഭ്യമല്ല: $e');
+    }
+  }
 
   /// നിലവിലെ ന്യൂസ് ലോഡ് ചെയ്യുക
   Future<void> fetchLatestNews({
@@ -98,7 +122,9 @@ class FirebaseNewsService {
     int limit = 20,
   }) async {
     try {
-      final ref = _database.ref('news/$channelType');
+      final db = _database;
+      if (db == null) return;
+      final ref = db.ref('news/$channelType');
 
       final snapshot = await ref
           .orderByChild('createdAt')
@@ -117,7 +143,7 @@ class FirebaseNewsService {
       // Sort in reverse order (newest first)
       _newsArticles.sort((a, b) => b.createdAt.compareTo(a.createdAt));
     } catch (e) {
-      print('Error fetching news: $e');
+      debugPrint('Error fetching news: $e');
     }
   }
 
@@ -127,7 +153,9 @@ class FirebaseNewsService {
     required String articleId,
   }) async {
     try {
-      final ref = _database.ref('news/$channelType/$articleId');
+      final db = _database;
+      if (db == null) return null;
+      final ref = db.ref('news/$channelType/$articleId');
       final snapshot = await ref.get();
 
       if (snapshot.exists) {
@@ -135,7 +163,7 @@ class FirebaseNewsService {
       }
       return null;
     } catch (e) {
-      print('Error fetching article: $e');
+      debugPrint('Error fetching article: $e');
       return null;
     }
   }
@@ -143,11 +171,13 @@ class FirebaseNewsService {
   /// ന്യൂസ് ആർട്സ്കെൾ സേവ് ചെയ്യുക (ബാക്ക്എൻഡ് സ്ക്രാപറിൽ നിന്ന്)
   Future<void> saveNewsArticle(NewsArticle article) async {
     try {
-      final ref = _database.ref('news/${article.channelType}/${article.id}');
+      final db = _database;
+      if (db == null) return;
+      final ref = db.ref('news/${article.channelType}/${article.id}');
       await ref.set(article.toMap());
-      print('Article saved: ${article.id}');
+      debugPrint('Article saved: ${article.id}');
     } catch (e) {
-      print('Error saving article: $e');
+      debugPrint('Error saving article: $e');
     }
   }
 
@@ -174,7 +204,7 @@ class FirebaseNewsService {
       await saveDubbedAudio(dubbedAudio);
       return mockDownloadUrl;
     } catch (e) {
-      print('Error uploading dubbed audio: $e');
+      debugPrint('Error uploading dubbed audio: $e');
       rethrow;
     }
   }
@@ -182,12 +212,14 @@ class FirebaseNewsService {
   /// ഡബ്ബ്ബഡ് ആഡിയോ ഡാറ്റാബേസിൽ സേവ് ചെയ്യുക
   Future<void> saveDubbedAudio(DubbedAudio dubbedAudio) async {
     try {
-      final ref = _database.ref(
+      final db = _database;
+      if (db == null) return;
+      final ref = db.ref(
           'dubbed_audio/${dubbedAudio.articleId}/${dubbedAudio.language}');
       await ref.set(dubbedAudio.toMap());
-      print('Dubbed audio saved: ${dubbedAudio.id}');
+      debugPrint('Dubbed audio saved: ${dubbedAudio.id}');
     } catch (e) {
-      print('Error saving dubbed audio: $e');
+      debugPrint('Error saving dubbed audio: $e');
     }
   }
 
@@ -197,20 +229,26 @@ class FirebaseNewsService {
     required String articleId,
   }) async {
     try {
-      final ref = _database.ref('news/$channelType/$articleId/views');
+      final db = _database;
+      if (db == null) return;
+      final ref = db.ref('news/$channelType/$articleId/views');
       await ref.runTransaction((value) {
         final current = (value is int) ? value : int.tryParse('$value') ?? 0;
         return Transaction.success(current + 1);
       });
-      print('View count incremented for: $articleId');
+      debugPrint('View count incremented for: $articleId');
     } catch (e) {
-      print('Error incrementing view count: $e');
+      debugPrint('Error incrementing view count: $e');
     }
   }
 
   /// ലൈവ് അപ്ഡേറ്റ് ലിസ്റ്റനർ സെട് ചെയ്യുക ( Screenshots നിന്ന്)
   Stream<List<NewsArticle>> watchLatestNews(String channelType) {
-    return _database.ref('news/$channelType').onValue.map((event) {
+    final db = _database;
+    if (db == null) {
+      return Stream.value(<NewsArticle>[]);
+    }
+    return db.ref('news/$channelType').onValue.map((event) {
       List<NewsArticle> articles = [];
       if (event.snapshot.exists) {
         final data = event.snapshot.value as Map<dynamic, dynamic>;
@@ -229,7 +267,9 @@ class FirebaseNewsService {
     String language = 'en',
   }) async {
     try {
-      final ref = _database.ref('news');
+      final db = _database;
+      if (db == null) return [];
+      final ref = db.ref('news');
       final snapshot = await ref.get();
 
       List<NewsArticle> results = [];
@@ -255,7 +295,7 @@ class FirebaseNewsService {
 
       return results;
     } catch (e) {
-      print('Error searching news: $e');
+      debugPrint('Error searching news: $e');
       return [];
     }
   }

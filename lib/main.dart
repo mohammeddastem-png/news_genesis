@@ -1,17 +1,26 @@
-import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
-import 'package:google_mobile_ads/google_mobile_ads.dart';
+import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
+
+import 'firebase_options.dart';
 import 'screens/home_page.dart';
+
+Future<void> _bootstrapFirebase() async {
+  try {
+    await Firebase.initializeApp(
+      options: DefaultFirebaseOptions.currentPlatform,
+    );
+    if (kDebugMode) {
+      debugPrint('Firebase ഇനിഷ്യലൈസ് OK');
+    }
+  } catch (e, st) {
+    debugPrint('Firebase init പരാജയം: $e\n$st');
+  }
+}
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  
-  // Firebase Initialize
-  await Firebase.initializeApp();
-  
-  // Google AdMob Initialize
-  await MobileAds.instance.initialize();
-  
+  await _bootstrapFirebase();
   runApp(const NewsGenesisApp());
 }
 

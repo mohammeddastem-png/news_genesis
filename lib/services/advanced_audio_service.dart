@@ -1,3 +1,5 @@
+import 'package:flutter/foundation.dart';
+
 class Speaker {
   final String id;
   final String name;
@@ -29,9 +31,9 @@ class AdvancedAudioService {
   /// Initialize audio session with optimized settings
   Future<void> initAudioSession() async {
     try {
-      print('Audio session initialized');
+      debugPrint('Audio session initialized');
     } catch (e) {
-      print('Error initializing audio session: $e');
+      debugPrint('Error initializing audio session: $e');
     }
   }
 
@@ -61,7 +63,7 @@ class AdvancedAudioService {
         ),
       ];
 
-      print('Detected ${detectedSpeakers.length} speakers');
+      debugPrint('Detected ${detectedSpeakers.length} speakers');
       return detectedSpeakers;
     } catch (e) {
       throw Exception('Speaker diarization failed: $e');
@@ -79,7 +81,7 @@ class AdvancedAudioService {
       // For iOS: use AVAudioEngine
 
       // Placeholder implementation
-      print('Extracting audio for ${speaker.name} '
+      debugPrint('Extracting audio for ${speaker.name} '
           '(${speaker.startTime}s - ${speaker.endTime}s)');
 
       return [];
@@ -100,7 +102,7 @@ class AdvancedAudioService {
       // 2. Azure Text-to-Speech (Cognitive Services)
       // 3. ElevenLabs API (premium voice quality)
 
-      print('Applying multi-voice synthesis for ${speaker.name}');
+      debugPrint('Applying multi-voice synthesis for ${speaker.name}');
       // Actual implementation would call TTS API
       // with speaker-specific parameters
     } catch (e) {
@@ -112,7 +114,7 @@ class AdvancedAudioService {
   Future<void> startRecording(String outputPath) async {
     try {
       await initAudioSession();
-      print('Recording started: $outputPath');
+      debugPrint('Recording started: $outputPath');
     } catch (e) {
       throw Exception('Failed to start recording: $e');
     }
@@ -121,7 +123,7 @@ class AdvancedAudioService {
   /// Stop recording and return file path
   Future<String?> stopRecording() async {
     try {
-      print('Recording stopped');
+      debugPrint('Recording stopped');
       return null;
     } catch (e) {
       throw Exception('Failed to stop recording: $e');
@@ -140,7 +142,7 @@ class AdvancedAudioService {
       // In production, use ffmpeg to adjust audio timing:
       // ffmpeg -i input.mp3 -af "adelay=7000|7000" output.mp3
 
-      print('Audio sync offset applied: ${offset.inMilliseconds}ms');
+      debugPrint('Audio sync offset applied: ${offset.inMilliseconds}ms');
     } catch (e) {
       throw Exception('Failed to apply sync offset: $e');
     }
@@ -153,7 +155,7 @@ class AdvancedAudioService {
   ) async {
     try {
       for (var speaker in speakerMap) {
-        print('Now playing: ${speaker.name} (${speaker.startTime}s)');
+        debugPrint('Now playing: ${speaker.name} (${speaker.startTime}s)');
         
         // Wait for segment to finish
         await Future.delayed(
@@ -162,7 +164,7 @@ class AdvancedAudioService {
           ),
         );
         
-        print('Finished playing ${speaker.name}');
+        debugPrint('Finished playing ${speaker.name}');
       }
     } catch (e) {
       throw Exception('Failed to play audio: $e');
@@ -183,9 +185,9 @@ class AdvancedAudioService {
   /// Cleanup resources
   Future<void> dispose() async {
     try {
-      print('Audio resources disposed');
+      debugPrint('Audio resources disposed');
     } catch (e) {
-      print('Error disposing audio resources: $e');
+      debugPrint('Error disposing audio resources: $e');
     }
   }
 }

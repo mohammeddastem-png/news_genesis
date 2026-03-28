@@ -1,29 +1,23 @@
 import 'package:google_mobile_ads/google_mobile_ads.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 
 class AdMobService {
   // Ad Unit IDs - Update with your actual IDs from AdMob console
-  // Middle East targeting এর জন্য region-specific IDs
-  
   static const String bannerAdUnitIdAndroid = 'ca-app-pub-xxxxxxxxxxxxxxxx/yyyyyyyyyyyy';
-  static const String interstitialAdUnitIdAndroid =
-      'ca-app-pub-xxxxxxxxxxxxxxxx/yyyyyyyyyyyy';
+  static const String interstitialAdUnitIdAndroid = 'ca-app-pub-xxxxxxxxxxxxxxxx/yyyyyyyyyyyy';
   static const String rewardedAdUnitIdAndroid = 'ca-app-pub-xxxxxxxxxxxxxxxx/yyyyyyyyyyyy';
 
   static const String bannerAdUnitIdIOS = 'ca-app-pub-xxxxxxxxxxxxxxxx/yyyyyyyyyyyy';
-  static const String interstitialAdUnitIdIOS =
-      'ca-app-pub-xxxxxxxxxxxxxxxx/yyyyyyyyyyyy';
+  static const String interstitialAdUnitIdIOS = 'ca-app-pub-xxxxxxxxxxxxxxxx/yyyyyyyyyyyy';
   static const String rewardedAdUnitIdIOS = 'ca-app-pub-xxxxxxxxxxxxxxxx/yyyyyyyyyyyy';
 
-  // Test Ad Unit IDs (Google's official test IDs)
-  static const String testBannerAdUnitId =
-      'ca-app-pub-3940256099942544/6300978111';
-  static const String testInterstitialAdUnitId =
-      'ca-app-pub-3940256099942544/1033173712';
-  static const String testRewardedAdUnitId =
-      'ca-app-pub-3940256099942544/5224354917';
+  // Test Ad Unit IDs
+  static const String testBannerAdUnitId = 'ca-app-pub-3940256099942544/6300978111';
+  static const String testInterstitialAdUnitId = 'ca-app-pub-3940256099942544/1033173712';
+  static const String testRewardedAdUnitId = 'ca-app-pub-3940256099942544/5224354917';
 
-  static bool useTestAds = true; // ഡെവലപ്‍മെന്റ് സമയത്ത് true, പ്രൊഡെഖൻ false
+  static bool useTestAds = true;
 
   BannerAd? bannerAd;
   InterstitialAd? interstitialAd;
@@ -33,57 +27,72 @@ class AdMobService {
   bool isInterstitialAdReady = false;
   bool isRewardedAdReady = false;
 
-  /// ബാനർ ബിജ്ഞാപനം ലോഡ് ചെയ്യുക (ഏത് സ്ക്രീനിൽ വേണ്ടത് വേണ്ട സ്ഥാനത്ത് കാണിക്കാം)
+  /// Load Banner Ad (skip on web)
   void loadBannerAd() {
-    bannerAd = BannerAd(
-      adUnitId: useTestAds ? testBannerAdUnitId : bannerAdUnitIdAndroid,
-      request: const AdRequest(),
-      size: AdSize.banner,
-      listener: BannerAdListener(
-        onAdLoaded: (ad) {
-          print('Banner ad loaded');
-          isBannerAdReady = true;
-        },
-        onAdFailedToLoad: (ad, error) {
-          print('Banner ad failed to load: ${error.message}');
-          ad.dispose();
-          isBannerAdReady = false;
-        },
-        onAdOpened: (ad) {
-          print('Banner ad opened');
-        },
-        onAdClosed: (ad) {
-          print('Banner ad closed');
-        },
-        onAdClicked: (ad) {
-          print('Banner ad clicked');
-        },
-        onAdImpression: (ad) {
-          print('Banner ad impression');
-        },
-      ),
-    );
+    if (kIsWeb) {
+      debugPrint('Banner ads not supported on web');
+      return;
+    }
+    
+    try {
+      bannerAd = BannerAd(
+        adUnitId: useTestAds ? testBannerAdUnitId : bannerAdUnitIdAndroid,
+        request: const AdRequest(),
+        size: AdSize.banner,
+        listener: BannerAdListener(
+          onAdLoaded: (ad) {
+            debugPrint('Banner ad loaded');
+            isBannerAdReady = true;
+          },
+          onAdFailedToLoad: (ad, error) {
+            debugPrint('Banner ad failed to load: ${error.message}');
+            ad.dispose();
+            isBannerAdReady = false;
+          },
+          onAdOpened: (ad) {
+            debugPrint('Banner ad opened');
+          },
+          onAdClosed: (ad) {
+            debugPrint('Banner ad closed');
+          },
+          onAdClicked: (ad) {
+            debugPrint('Banner ad clicked');
+          },
+          onAdImpression: (ad) {
+            debugPrint('Banner ad impression');
+          },
+        ),
+      );
 
-    bannerAd!.load();
+      bannerAd!.load();
+    } catch (e) {
+      debugPrint('Error loading banner ad: $e');
+      isBannerAdReady = false;
+    }
   }
 
   /// ഇന്റേർസ്റ്റി‌ഷ്യൽ ബിജ്ഞാപനം ലോഡ് ചെയ്യുക (ചാനൽ മാറ്റുമ്പോൾ കാണിക്കാം)
   void loadInterstitialAd() {
+    if (kIsWeb) return;
+    try {
     InterstitialAd.load(
       adUnitId: useTestAds ? testInterstitialAdUnitId : interstitialAdUnitIdAndroid,
       request: const AdRequest(),
       adLoadCallback: InterstitialAdLoadCallback(
         onAdLoaded: (ad) {
-          print('Interstitial ad loaded');
+          debugPrint('Interstitial ad loaded');
           interstitialAd = ad;
           isInterstitialAdReady = true;
         },
         onAdFailedToLoad: (LoadAdError error) {
-          print('Interstitial ad failed to load: ${error.message}');
+          debugPrint('Interstitial ad failed to load: ${error.message}');
           isInterstitialAdReady = false;
         },
       ),
     );
+    } catch (e) {
+      debugPrint('Error loading interstitial ad: $e');
+    }
   }
 
   /// ഇന്റേർസ്റ്റി‌ഷ്യൽ ബിജ്ഞാപനം കാണിക്കുക
@@ -91,10 +100,10 @@ class AdMobService {
     if (isInterstitialAdReady && interstitialAd != null) {
       interstitialAd!.fullScreenContentCallback = FullScreenContentCallback(
         onAdShowedFullScreenContent: (ad) {
-          print('Interstitial ad shown');
+          debugPrint('Interstitial ad shown');
         },
         onAdDismissedFullScreenContent: (ad) {
-          print('Interstitial ad dismissed');
+          debugPrint('Interstitial ad dismissed');
           ad.dispose();
           interstitialAd = null;
           onAdClosed?.call();
@@ -102,7 +111,7 @@ class AdMobService {
           loadInterstitialAd();
         },
         onAdFailedToShowFullScreenContent: (ad, error) {
-          print('Failed to show interstitial ${error.message}');
+          debugPrint('Failed to show interstitial ${error.message}');
           ad.dispose();
           interstitialAd = null;
         },
@@ -114,21 +123,26 @@ class AdMobService {
 
   /// പുരസ്കൃത ബിജ്ഞാപനം ലോഡ് ചെയ്യുക (ഉദാ: ആഡ്‍വാൻസ് ഓപ്ഷനുകൾക്കായി)
   void loadRewardedAd() {
+    if (kIsWeb) return;
+    try {
     RewardedAd.load(
       adUnitId: useTestAds ? testRewardedAdUnitId : rewardedAdUnitIdAndroid,
       request: const AdRequest(),
       rewardedAdLoadCallback: RewardedAdLoadCallback(
         onAdLoaded: (ad) {
-          print('Rewarded ad loaded');
+          debugPrint('Rewarded ad loaded');
           rewardedAd = ad;
           isRewardedAdReady = true;
         },
         onAdFailedToLoad: (LoadAdError error) {
-          print('Rewarded ad failed to load: ${error.message}');
+          debugPrint('Rewarded ad failed to load: ${error.message}');
           isRewardedAdReady = false;
         },
       ),
     );
+    } catch (e) {
+      debugPrint('Error loading rewarded ad: $e');
+    }
   }
 
   /// പുരസ്കൃത ബിജ്ഞാപനം കാണിക്കുക
@@ -138,16 +152,16 @@ class AdMobService {
     if (isRewardedAdReady && rewardedAd != null) {
       rewardedAd!.fullScreenContentCallback = FullScreenContentCallback(
         onAdShowedFullScreenContent: (ad) {
-          print('Rewarded ad shown');
+          debugPrint('Rewarded ad shown');
         },
         onAdDismissedFullScreenContent: (ad) {
-          print('Rewarded ad dismissed');
+          debugPrint('Rewarded ad dismissed');
           ad.dispose();
           rewardedAd = null;
           loadRewardedAd();
         },
         onAdFailedToShowFullScreenContent: (ad, error) {
-          print('Failed to show rewarded ad: ${error.message}');
+          debugPrint('Failed to show rewarded ad: ${error.message}');
           ad.dispose();
           rewardedAd = null;
         },
@@ -155,7 +169,7 @@ class AdMobService {
 
       rewardedAd!.show(
         onUserEarnedReward: (ad, reward) {
-          print('User earned reward: ${reward.amount} ${reward.type}');
+          debugPrint('User earned reward: ${reward.amount} ${reward.type}');
           onUserEarnedReward(reward);
         },
       );

@@ -22,47 +22,53 @@ environment:
   sdk: ^3.11.1
 
 # Dependencies specify other packages that your package needs in order to work.
-# To automatically upgrade your package dependencies to the latest versions
-# consider running `flutter pub upgrade --major-versions`. Alternatively,
-# dependencies can be manually updated by changing the version numbers below to
-# the latest version available on pub.dev. To see which dependencies have newer
-# versions available, run `flutter pub outdated`.
 dependencies:
   flutter:
     sdk: flutter
 
+  # UI & Icons
   cupertino_icons: ^1.0.0
   
-  # Firebase
-  firebase_core: ^4.6.0
-  firebase_database: ^12.2.0
-  firebase_storage: ^13.2.0
+  # Firebase (Cross-platform)
+  firebase_core: any
+  firebase_database: any
+  firebase_storage: any
   
-  # Video & Streaming
+  # Video & Streaming (Web, iOS, Android, Windows, macOS)
   video_player: ^2.8.0
+  chewie: ^1.8.1
+  webview_flutter: ^4.9.0
   
-  # AI & Language
-  google_generative_ai: ^0.4.7
+  # AI & Language (Web, iOS, Android, Windows, macOS)
+  google_generative_ai: ^0.3.0
   
-  # Audio Processing
+  # Platform-specific Audio (iOS, Android only)
   audio_session: ^0.2.3
   record: ^6.2.0
   
-  # Ads & Monetization
-  google_mobile_ads: ^7.0.0
+  # Ads & Monetization (Mobile only)
+  google_mobile_ads: ^6.0.0
   
-  # State Management
+  # State Management (Cross-platform)
   provider: ^6.0.0
   
-  # Networking & Parsing
+  # Networking & Parsing (Cross-platform)
   http: ^1.1.0
   
-  # Utilities
+  # Utilities (Cross-platform)
   connectivity_plus: ^7.0.0
   shared_preferences: ^2.2.0
   intl: ^0.20.2
-  get_it: ^9.2.1
+  get_it: ^7.6.0
   path_provider: ^2.1.0
+  flutter_tts: ^4.2.5
+  
+  # Web Support
+  universal_html: ^2.2.4
+  youtube_player_iframe: ^5.2.2
+  youtube_explode_dart: ^3.0.5
+  audioplayers: ^6.6.0
+  uuid: ^4.5.3
 
 dev_dependencies:
   flutter_test:

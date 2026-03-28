@@ -1,7 +1,10 @@
 import 'dart:async';
+import 'package:flutter/foundation.dart';
 import 'package:google_generative_ai/google_generative_ai.dart';
 
-enum TargetLanguage { malayalam, hindi, urdu }
+import '../config/app_config.dart';
+
+enum TargetLanguage { malayalam, tamil, urdu, hindi }
 
 /// Service for AI-powered real-time dubbing using Gemini API
 class AIDubbingService {
@@ -11,14 +14,36 @@ class AIDubbingService {
   // Map target languages to proper language codes
   static const Map<TargetLanguage, String> languageCodes = {
     TargetLanguage.malayalam: 'ml',
-    TargetLanguage.hindi: 'hi',
+    TargetLanguage.tamil: 'ta',
     TargetLanguage.urdu: 'ur',
+    TargetLanguage.hindi: 'hi',
   };
 
   AIDubbingService({
     required this.apiKey,
-    this.modelName = 'gemini-1.5-flash',
-  });
+    String? modelName,
+  }) : modelName = modelName ?? AppConfig.geminiModelFlash;
+
+  /// English anchor-style script when YouTube captions are unavailable (e.g. web CORS).
+  Future<String> generateEnglishBroadcastScriptFallback() async {
+    final model = GenerativeModel(
+      model: modelName,
+      apiKey: apiKey,
+    );
+    final res = await _retry(() async {
+      final r = await model.generateContent([
+        Content.text(
+          'Write 4–6 short sentences of English TV news speech as if transcribed '
+          'from Al Jazeera English live: Middle East and international headlines, '
+          'neutral anchor tone, present tense. Output English only, no title or labels.',
+        ),
+      ]);
+      final t = r.text?.trim();
+      if (t == null || t.isEmpty) throw StateError('Empty fallback script');
+      return t;
+    });
+    return res.length > 4000 ? res.substring(0, 4000) : res;
+  }
 
   /// Translate news transcript with context preservation
   Future<String> translateNewsContent(
@@ -103,9 +128,9 @@ $sourceText
   Future<void> initTTS(TargetLanguage language) async {
     try {
       final languageCode = languageCodes[language] ?? 'en';
-      print('TTS initialized for $languageCode');
+      debugPrint('TTS initialized for $languageCode');
     } catch (e) {
-      print('Warning: Could not set TTS voice: $e');
+      debugPrint('Warning: Could not set TTS voice: $e');
     }
   }
 
@@ -122,13 +147,13 @@ $sourceText
       final estimatedDuration = _calculateSpeechDuration(translatedText);
 
       if (estimatedDuration.inSeconds > 10) {
-        print('Warning: Dubbed audio exceeds 10 seconds: $estimatedDuration');
+        debugPrint('Warning: Dubbed audio exceeds 10 seconds: $estimatedDuration');
       }
 
       // Apply audio sync offset (typically 5-10 seconds before/after)
       await Future.delayed(audioSyncOffset);
 
-      print('Playing dubbed audio: $translatedText');
+      debugPrint('Playing dubbed audio: $translatedText');
     } catch (e) {
       throw Exception('Failed to play dubbing: $e');
     }
@@ -159,6 +184,16 @@ $sourceText
 
   /// Clean up TTS resources
   Future<void> dispose() async {
-    print('Dubbing service disposed');
+    debugPrint('Dubbing service disposed');
   }
+}
+
+extension TargetLanguageTts on TargetLanguage {
+  /// Locales for flutter_tts (best-effort per platform).
+  String get ttsLocale => switch (this) {
+        TargetLanguage.malayalam => 'ml-IN',
+        TargetLanguage.tamil => 'ta-IN',
+        TargetLanguage.urdu => 'ur-PK',
+        TargetLanguage.hindi => 'hi-IN',
+      };
 }

@@ -1,0 +1,23 @@
+name: News Scraper
+
+on:
+  schedule:
+    - cron: '0 * * * *' # ഓരോ മണിക്കൂറിലും പ്രവർത്തിക്കും
+  workflow_dispatch: # നിങ്ങൾക്ക് വേണമെങ്കിൽ തനിയെ റൺ ചെയ്യാം
+
+jobs:
+  scrape:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.9'
+      - name: Install dependencies
+        run: |
+          pip install firebase-admin requests beautifulsoup4
+      - name: Run scraper
+        env:
+          FIREBASE_SERVICE_ACCOUNT_KEY: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_KEY }}
+        run: python scraper.py
