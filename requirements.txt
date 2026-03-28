@@ -3,3 +3,4 @@ edge-tts
 yt-dlp
 pydub
 google-generativeai
+cloudinary==1.34.0
