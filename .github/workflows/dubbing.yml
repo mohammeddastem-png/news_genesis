@@ -1,12 +1,8 @@
-# pending ജോബുകൾ പ്രോസസ്സ്: Gemini 2.5 + Edge-TTS
-# Secrets: FIREBASE_SERVICE_ACCOUNT_KEY, (GEMINI_API_KEY അല്ലെങ്കിൽ മുഴുവൻ കോളाब് DUBBING_WEBHOOK_URL മാത്രം)
-# ഓപ്ഷണൽ: GEMINI_MODEL, DUBBING_WEBHOOK_URL, FIREBASE_DATABASE_URL, FIREBASE_STORAGE_BUCKET
-
 name: Live dubbing worker
 
 on:
   schedule:
-    - cron: '* * * * *' # ഏത് മിനിറ്റിലും (എത്രയും വേഗം GH ഷെഡ്യൂൾ)
+    - cron: '*/5 * * * *' # ഓരോ 5 മിനിറ്റിലും (GitHub limits അനുസരിച്ച്)
   workflow_dispatch:
 
 jobs:
@@ -17,17 +13,23 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.11'
+      
       - name: Install system deps
         run: sudo apt-get update && sudo apt-get install -y ffmpeg
+      
       - name: Install Python packages
         run: |
-          pip install firebase-admin google-generativeai edge-tts pydub
+          python -m pip install --upgrade pip
+          pip install firebase-admin google-generativeai edge-tts pydub cloudinary yt-dlp
+      
       - name: Run dubbing worker
         env:
           FIREBASE_SERVICE_ACCOUNT_KEY: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_KEY }}
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
           GEMINI_MODEL: ${{ secrets.GEMINI_MODEL }}
-          FIREBASE_STORAGE_BUCKET: ${{ secrets.FIREBASE_STORAGE_BUCKET }}
           FIREBASE_DATABASE_URL: ${{ secrets.FIREBASE_DATABASE_URL }}
-          DUBBING_WEBHOOK_URL: ${{ secrets.DUBBING_WEBHOOK_URL }}
+          # Cloudinary Secrets
+          CLOUDINARY_CLOUD_NAME: ${{ secrets.CLOUDINARY_CLOUD_NAME }}
+          CLOUDINARY_API_KEY: ${{ secrets.CLOUDINARY_API_KEY }}
+          CLOUDINARY_API_SECRET: ${{ secrets.CLOUDINARY_API_SECRET }}
         run: python dubbing_worker.py
