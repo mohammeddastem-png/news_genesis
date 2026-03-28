@@ -34,7 +34,8 @@ class LiveDubbingJob {
       audioUrl: m['audioUrl'] as String?,
       durationSec: (m['durationSec'] as num?)?.toDouble(),
       syncSeconds: (m['syncSeconds'] as num?)?.toDouble(),
-      errorMessage: m['errorMessage'] as String?,
+      errorMessage:
+          m['errorMessage'] as String? ?? m['error'] as String?,
     );
   }
 }

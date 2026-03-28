@@ -25,28 +25,46 @@ def init_firebase():
     info = json.loads(raw)
     cred = credentials.Certificate(info)
     bucket = os.environ.get("FIREBASE_STORAGE_BUCKET") or "newsgenesis-59790.firebasestorage.app"
-    db_url = "https://newsgenesis-59790-default-rtdb.firebaseio.com"
-    
+    db_url = os.environ.get(
+        "FIREBASE_DATABASE_URL",
+        "https://newsgenesis-59790-default-rtdb.firebaseio.com",
+    )
+
     if not firebase_admin._apps:
         firebase_admin.initialize_app(cred, {"databaseURL": db_url, "storageBucket": bucket})
     print("✅ Firebase Connected Successfully.")
 
-# --- 2. Gemini Translation Logic ---
+# --- 2. Gemini Translation (2.x മോഡൽ — 1.5-flash ഫ്രീ ടಿಯർ 429/ക്വോട്ട പിശക് കൊടുക്കും) ---
 def gemini_translate(text: str, target_code: str, api_key: str) -> str:
+    import time
     import google.generativeai as genai
+
     genai.configure(api_key=api_key)
-    model = genai.GenerativeModel("gemini-1.5-flash") # Stable version
-    
+    model_name = os.environ.get("GEMINI_MODEL", "gemini-2.5-flash").strip()
+    model = genai.GenerativeModel(model_name)
     prompt = f"""You are a professional broadcast-news translator.
 Translate from English to language code "{target_code}".
 Maintain a serious news tone. Output only the translated text.
-English: {text}"""
-    
-    r = model.generate_content(prompt)
-    out = (r.text or "").strip()
-    if not out:
-        raise RuntimeError("Empty translation from Gemini")
-    return out
+English: {text[:12000]}"""
+
+    last_err = None
+    for attempt in range(5):
+        try:
+            r = model.generate_content(prompt)
+            out = (r.text or "").strip()
+            if not out:
+                raise RuntimeError("Empty translation from Gemini")
+            return out[:6000]
+        except Exception as e:
+            last_err = e
+            msg = str(e).lower()
+            if "429" in str(e) or "quota" in msg or "resource" in msg:
+                wait = min(60, 4 * (2**attempt) + 2)
+                print(f"⚠️ Gemini rate/quota, retry in {wait}s ({attempt + 1}/5)", flush=True)
+                time.sleep(wait)
+                continue
+            raise
+    raise RuntimeError(str(last_err))
 
 # --- 3. Advanced Edge-TTS Voice Mapping ---
 def get_edge_voice(lang_code: str, speaker_type="male") -> str:
@@ -86,21 +104,70 @@ def upload_to_firebase(job_id: str, local_path: str):
 
 # --- 5. Main Processing Loop ---
 async def process_job(job_id: str, data: dict):
+    webhook = os.environ.get("DUBBING_WEBHOOK_URL", "").strip()
     api_key = os.environ.get("GEMINI_API_KEY", "").strip()
-    if not api_key: raise RuntimeError("GEMINI_API_KEY missing")
+    if not webhook and not api_key:
+        raise RuntimeError("GEMINI_API_KEY അല്ലെങ്കിൽ DUBBING_WEBHOOK_URL വേണം")
 
     ref = db.reference(f"dubbing_jobs/{job_id}")
     ref.update({"status": "processing"})
 
-    source_text = (data.get("sourceEnglish") or "").strip()
+    source_text = (data.get("sourceEnglish") or "").strip()[:8000]
     target_lang = (data.get("targetLangCode") or "ml").strip()
     min_sec = int(data.get("minAudioSec") or 20)
-    
+    sync_ts = float(data.get("syncSeconds") or 0)
+
+    # ഓപ്ഷണൽ: കോളाब് URL — JSON മറുപടി: translatedText, audioBase64
+    if webhook:
+        try:
+            import urllib.request
+            import urllib.error
+            body = json.dumps({
+                "jobId": job_id,
+                "sourceEnglish": source_text,
+                "targetLangCode": target_lang,
+                "syncSeconds": sync_ts,
+            }).encode("utf-8")
+            req = urllib.request.Request(
+                webhook,
+                data=body,
+                headers={"Content-Type": "application/json"},
+                method="POST",
+            )
+            with urllib.request.urlopen(req, timeout=300) as resp:
+                payload = json.loads(resp.read().decode())
+            translated_text = (payload.get("translatedText") or "").strip()
+            audio_b64 = (payload.get("audioBase64") or "").strip()
+            if not translated_text or not audio_b64:
+                raise RuntimeError("Webhook response missing translatedText or audioBase64")
+            import base64
+            with tempfile.TemporaryDirectory() as tmp:
+                mp3_path = os.path.join(tmp, "dub.mp3")
+                with open(mp3_path, "wb") as f:
+                    f.write(base64.b64decode(audio_b64))
+                final_duration = process_audio_duration(mp3_path, min_sec * 1000)
+                audio_url = upload_to_firebase(job_id, mp3_path)
+            ref.update({
+                "status": "ready",
+                "translatedText": translated_text,
+                "audioUrl": audio_url,
+                "durationSec": final_duration,
+                "syncSeconds": sync_ts,
+                "processedAt": int(__import__("time").time() * 1000),
+            })
+            print(f"✅ Job {job_id} via webhook. Duration: {final_duration}s")
+            return
+        except Exception as hook_err:
+            print(f"⚠️ Webhook failed, falling back to Gemini+Edge: {hook_err}", flush=True)
+
+    if not api_key:
+        raise RuntimeError("ഫോൾബാക്ക് പൈപ്പ്ലൈന് GEMINI_API_KEY വേണം")
+
     # 1. Translate
     translated_text = gemini_translate(source_text, target_lang, api_key)
     
     # 2. Synthesize Voice (Edge-TTS)
-    voice_model = get_edge_voice(target_lang)
+    voice_model = get_edge_voice(target_lang) or "en-US-GuyNeural"
     
     with tempfile.TemporaryDirectory() as tmp:
         mp3_path = os.path.join(tmp, "dub.mp3")
@@ -116,7 +183,8 @@ async def process_job(job_id: str, data: dict):
         "translatedText": translated_text,
         "audioUrl": audio_url,
         "durationSec": final_duration,
-        "processedAt": {".sv": "timestamp"}
+        "syncSeconds": sync_ts,
+        "processedAt": int(__import__("time").time() * 1000),
     })
     print(f"✅ Job {job_id} Completed. Duration: {final_duration}s")
 
@@ -135,7 +203,10 @@ def main():
                 asyncio.run(process_job(str(job_id), data))
             except Exception as e:
                 print(f"❌ FAIL {job_id}: {e}")
-                db.reference(f"dubbing_jobs/{job_id}").update({"status": "error", "error": str(e)})
+                db.reference(f"dubbing_jobs/{job_id}").update({
+                    "status": "error",
+                    "errorMessage": str(e)[:800],
+                })
 
 if __name__ == "__main__":
     main()
